@@ -1,11 +1,15 @@
 {% extends 'base.html' %}
-{% import 'bootstrap/wtf.html' as wtf %}
+
 
 {% block app_content %}
     <h1>{{ _('Sign In') }}</h1>
-    <div class="row">
-        <div class="col-md-4">
-            {{ wtf.quick_form(form) }}
+
+    <button class="btn btn-danger">Test</button>
+    <div >
+        {{form.username.label()}}
+        {{form.username()}}
+      
+           
         </div>
     </div>
     <br>

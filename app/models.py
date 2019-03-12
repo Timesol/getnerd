@@ -7,17 +7,9 @@ from hashlib import md5
 from time import time
 import jwt
 from flask import current_app
-from sqlalchemy.ext.declarative import declarative_base
-from flask_migrate import migrate, upgrade
-from flask import render_template, flash, redirect, url_for, request, g, current_app, json
-
-Base = declarative_base()
 
 
-followers = db.Table('followers',
-    db.Column('follower_id', db.Integer, db.ForeignKey('user.id')),
-    db.Column('followed_id', db.Integer, db.ForeignKey('user.id'))
-)
+
 
 
 
@@ -32,11 +24,6 @@ class User(UserMixin,db.Model):
     about_me = db.Column(db.String(140))
     last_seen = db.Column(db.DateTime, default=datetime.utcnow)
     @login.user_loader
-    #db relationship between left sider User(Parent Class) and right side user defined under ('User,...
-    #secondary configures the association table I defined above the class
-    #primaryjoin indicates thecondition that links the left side entity(the follower user) with the association table
-    #secondaryjoin indicates the condition that links the right side user/the followed user) with the association table
-    #backref defines how the the relationship will be acced from the right side user
         
 
     def load_user(id):
@@ -67,35 +54,6 @@ class User(UserMixin,db.Model):
             return
         return User.query.get(id)
 
-    followed = db.relationship(
-        'User', secondary=followers,
-        primaryjoin=(followers.c.follower_id == id),
-        secondaryjoin=(followers.c.followed_id == id),
-        backref=db.backref('followers', lazy='dynamic'), lazy='dynamic')
-
-#functions to  follow unfollow user 
-
-    def follow(self, user):
-        if not self.is_following(user):
-            self.followed.append(user)
-
-    def unfollow(self, user):
-        if self.is_following(user):
-            self.followed.remove(user)
-
-    def is_following(self, user):
-        return self.followed.filter(
-            followers.c.followed_id == user.id).count() > 0
-#query all entries user followed
-
-
-
-    def followed_posts(self):
-        followed = Post.query.join(
-            followers, (followers.c.followed_id == Post.user_id)).filter(
-                followers.c.follower_id == self.id)
-        own = Post.query.filter_by(user_id=self.id)
-        return followed.union(own).order_by(Post.timestamp.desc())
 
 #Create Avatar Icon for User
 
@@ -104,16 +62,5 @@ class User(UserMixin,db.Model):
         return 'https://www.gravatar.com/avatar/{}?d=identicon&s={}'.format(
             digest, size)    
 
-
-
-class Post(db.Model): # ,SearchableMixin needs to be added
-    __searchable__ = ['body']
-    id = db.Column(db.Integer, primary_key=True)
-    body = db.Column(db.String(140))
-    timestamp = db.Column(db.DateTime, index=True, default=datetime.utcnow)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    language = db.Column(db.String(5))
-    def __repr__(self):
-        return '<Post {}>'.format(self.body)
 
 
